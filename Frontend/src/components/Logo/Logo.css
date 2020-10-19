@@ -1,0 +1,10 @@
+.Tilt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(89deg, #ff5edf 0%, #04c8de 100%);
+}
+
+.flex-item-right {
+  flex: 50%;
+}
