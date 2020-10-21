@@ -13,6 +13,7 @@ const knex = require('knex')
 //     database : 'myapp_test'
 //   }
 // });
+
 // OR 
 const db = knex({
   client: 'pg',
