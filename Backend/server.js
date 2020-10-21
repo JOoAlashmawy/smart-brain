@@ -80,18 +80,24 @@ app.post('/signin', (req, res) => {
 
 
 app.post('/register', async(req, res) => {
-  // try {
+  try{  
+    const { email, name, password } = req.body;
+    const hash = bcrypt.hashSync(password);
+    console.log(hash);
+    await db.query("BEGIN")
+    await db.query("INSERT INTO login (hash, email) VALUES($1, $2)",[hash,email]) 
+    const user = await db.query("INSERT INTO users (email, name, joined) VALUES($1, $2, $3 ) RETURNING *", [email, name, new Date()])
+    res.json(user.rows )
+    db.query("COMMIT")
+    db.query('ROLLBACK')
+    // .catch(err => res.send(err.message));
+    // .catch(db.query('ROLLBACK'))
+  }catch(err){
+    res.send(err.message)
+  }
     
-  const { email, name, password } = req.body;
-  const hash = bcrypt.hashSync(password);
-  console.log(hash);
-  await db.query("START TRANSACTION")
-  .then(db.query("INSERT INTO login (hash, email), VALUES($1, $2)  RETURNING email",[hash,email])) 
-  .then(loginEmail => db.query("INSERT INTO users (email, name, joined) VALUES($1, $2, $3 ) RETURNING *", [loginEmail[0], name, new Date()]))
-  .then(users => res.json(users.rows[0]))
-  .then(db.query("COMMIT"))
-  .catch(err => console.error(err.message));
-    
+
+   
   // db('users')
     //   .returning('*')
     //   .insert({
