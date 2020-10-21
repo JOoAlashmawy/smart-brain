@@ -2,7 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt-nodejs');
 const cors = require('cors');
-const knex = require('knex')
+// const knex = require('knex');
+const db = require('./db'); 
 
 // var knex = require('knex')({
 //   client: 'mysql',
@@ -13,19 +14,21 @@ const knex = require('knex')
 //     database : 'myapp_test'
 //   }
 // });
-
 // OR 
-const db = knex({
-  client: 'pg',
-  connection: {
-    host : '127.0.0.1',
-    user : 'joo',
-    password : '',
-    database : 'smart-brain'
-  }
-});
+// const db = knex({
+//   client: 'pg',
+//   version: '13',
+//   connection: {
+//     host : '127.0.0.1',
+//     user : 'joo',
+//     password : '',
+//     database : 'smart-brain'
+//   }
+// });
 
+// console.log(db.select('*').from('users').then(console.log))
 
+// console.log(postgres.select('*').from('users').then(console.log))
 
 const app = express();
 
@@ -75,45 +78,71 @@ app.post('/signin', (req, res) => {
   }
 });
 
-app.post('/register', (req, res) => {
+
+app.post('/register', async(req, res) => {
+  // try {
+    
   const { email, name, password } = req.body;
-  database.users.push({
-    id:'125',
-    name: name,
-    email: email,
-    entries: 0,
-    joined: new Date()
-  })
-  res.json(database.users[database.users.length-1]);
+  const hash = bcrypt.hashSync(password);
+  console.log(hash);
+  await db.query("START TRANSACTION")
+  .then(db.query("INSERT INTO login (hash, email), VALUES($1, $2)  RETURNING email",[hash,email])) 
+  .then(loginEmail => db.query("INSERT INTO users (email, name, joined) VALUES($1, $2, $3 ) RETURNING *", [loginEmail[0], name, new Date()]))
+  .then(users => res.json(users.rows[0]))
+  .then(db.query("COMMIT"))
+  .catch(err => console.error(err.message));
+    
+  // db('users')
+    //   .returning('*')
+    //   .insert({
+    //     email: email,
+    //     name: name,
+    //     joined:new Date()
+    //   })
+    //   .then(console.log)
+        // .then(user => {
+        //   res.json(user[0]);
+        // })
+        // .catch(err => res.status(400).json('unable to register'))
+    
+  //--------------------------------------------------------------------------------
+        
+  //   await db.query("INSERT INTO users (email, name, joined) VALUES($1, $2, $3 )", [email, name, new Date()]);
+  //   const allUsers = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+  //   res.json(allUsers.rows);
+  // } catch(err){
+  //   console.error(err.message);
+  // }
 });
 
-app.get('/profile/:id', (req, res) => {
+app.get('/profile/:id', async(req, res) => {
   const { id } = req.params;
-  let found = false;
-  database.users.forEach((user) => {
-    if (user.id === id) {
-      found = true;
-      return res.json(user);
-    }
-  });
-  if (!found) {
-    res.status(400).json('not found');
-  }
+  await db.query("SELECT * FROM users WHERE id = $1 ", [id])
+  .then(user =>{
+    if(user.rows[0]){ 
+      res.json(user.rows[0])
+    } else {res.status(400).json('Not found')}
+  })
+  .catch(err => res.status(400).json(err.message));
+  // try{
+  //   const { id } = req.params;
+  //   const user = await db.query("SELECT * FROM users WHERE id = $1", [id]);
+  //   res.json(user.rows[0])
+  // }catch(err) {
+  //   res.status(400).json(err.message);
+  // }
 });
 
-app.put('/image', (req, res) => {
+app.put('/image', async(req, res) => {
   const { id } = req.body;
-  let found = false;
-  database.users.forEach((user) => {
-    if (user.id === id) {
-      found = true;
-      user.entries++;
-      return res.json(user.entries);
-    }
-    if (!found) {
-      res.status(400).json(user.entries);
-    }
-  });
+  await db.query("SELECT entries FROM users WHERE id = $1", [id])
+  .then(entries => { 
+    console.log(entries.rows[0].entries)
+    db.query("UPDATE users SET entries = $1 WHERE id = $2",[parseInt(entries.rows[0].entries)+1, id])
+    res.json('process succeeded')  
+  })
+  .catch(err => res.status(400).json(err.message));
+  
 });
 
 app.listen('3000', () => {
