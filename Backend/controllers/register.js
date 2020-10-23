@@ -1,4 +1,4 @@
-const handleRegister = async(req, res, db, bcrypt) => {
+const handleRegister = (db, bcrypt) => async (req, res) =>{
     try{  
       const { email, name, password } = req.body;
       if(!email || !name || !password) {

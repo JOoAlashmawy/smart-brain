@@ -17,7 +17,7 @@ app.use(cors());
 
 app.get('/', (req, res) => {res.send('hello bro')});
 app.post('/signin', (req, res) => {signin.handleSignin(req, res, db, bcrypt)}); //OR we can use another way to send that like next
-app.post('/register', (req, res) => {register.handleRegister(req, res, db, bcrypt)});
+app.post('/register', (req, res) => {register.handleRegister(db, bcrypt)(req, res)});
 app.get('/profile/:id', (req, res) => {profile.handleProfileGet(req, res, db)});
 app.put('/image', (req, res) => {image.handleImage(req, res, db)});
 app.post('/imageurl', (req, res) => {image.handleApiCall(req, res)});
