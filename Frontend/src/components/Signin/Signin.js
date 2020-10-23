@@ -24,12 +24,13 @@ class signin extends React.Component {
       body: JSON.stringify({
         email: this.state.signInEmail,
         password: this.state.signInPassword,
-        name: this.state.name
       }),
     })
       .then((response) => response.json())
-      .then((data) => {
-        if (data === 'success') {
+      .then((user) => {
+        console.log(user.id)
+        if (user) {
+          // this.props.loadUser(user)
           this.props.onRouteChange('home');
         }
       });
